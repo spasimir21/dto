@@ -1,14 +1,14 @@
-import { ValidationError, Validator } from '../validation/validator';
+import { ValidationError } from '../validation/Validator';
 import { DTO, DTOProperties, DTOType } from '../DTO';
 import { defineMixin } from '../utils/mixin';
 
 interface ValidatorProperties<T, Props> {
-  validators?: Validator<T, Props>[];
+  validators?: ((value: T, properties: Props) => ValidationError[])[];
 }
 
 interface DTOWithValidators {
-  withValidator(validator: Validator<DTOType<this>, DTOProperties<this>>): this;
-  withoutValidator(validator: Validator<DTOType<this>, DTOProperties<this>>): this;
+  withValidator(validator: (value: DTOType<this>, properties: DTOProperties<this>) => ValidationError[]): this;
+  withoutValidator(validator: (value: DTOType<this>, properties: DTOProperties<this>) => ValidationError[]): this;
 }
 
 const WithValidators = defineMixin<DTOWithValidators>(
@@ -27,7 +27,7 @@ const WithValidators = defineMixin<DTOWithValidators>(
   }
 );
 
-const validateValidators: Validator<any, ValidatorProperties<any, any>> = (value, props) => {
+const validateValidators = <T>(value: T, props: ValidatorProperties<T, any>) => {
   const errors: ValidationError[] = [];
   for (const validator of props.validators ?? []) errors.push(...validator(value, props));
   return errors;

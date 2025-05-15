@@ -85,4 +85,4 @@ const object = <T extends Record<string, DTO>, O extends keyof T = never>(
   props: ObjectProperties<T, O>
 ): ObjectDTO<T, O> => new ObjectDTO(props) as any;
 
-export { ObjectProperties, ObjectDTO, object };
+export { ObjectProperties, ObjectDTO, ObjectDTOType, object };

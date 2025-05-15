@@ -1,21 +1,23 @@
-import { error, nestError, ValidationError, Validator } from '../validator';
+import { error, nestError, ValidationError, Validator } from '../Validator';
 import { validateValidators } from '../../mixins/validators';
 import { TupleProperties } from '../../types/tuple';
 import { validate } from '../validators';
 import { DTO } from '../../DTO';
 
-const validateTuple: Validator<any, TupleProperties<DTO[]>> = (value, props) => {
-  if (!(value instanceof Array)) return [error('Value must be a tuple!')];
+class TupleValidator<T extends DTO[]> extends Validator<TupleProperties<T>> {
+  validate(value: any): ValidationError[] {
+    if (!(value instanceof Array)) return [error('Value must be a tuple!')];
 
-  if (value.length !== props.values.length)
-    return [error(`Value must have a length of exactly ${props.values.length}!`)];
+    if (value.length !== this.properties.values.length)
+      return [error(`Value must have a length of exactly ${this.properties.values.length}!`)];
 
-  const errors: ValidationError[] = [];
+    const errors: ValidationError[] = [];
 
-  for (let i = 0; i < props.values.length; i++)
-    errors.push(...validate(value[i], props.values[i]).map(error => nestError(i.toString(), error)));
+    for (let i = 0; i < this.properties.values.length; i++)
+      errors.push(...validate(value[i], this.properties.values[i]).map(error => nestError(i.toString(), error)));
 
-  return errors.length === 0 ? validateValidators(value, props) : errors;
-};
+    return errors.length === 0 ? validateValidators(value as any, this.properties) : errors;
+  }
+}
 
-export { validateTuple };
+export { TupleValidator };

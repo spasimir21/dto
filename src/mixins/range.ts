@@ -1,4 +1,4 @@
-import { error, ValidationError } from '../validation/validator';
+import { error, ValidationError } from '../validation/Validator';
 import { defineMixin } from '../utils/mixin';
 import { isObject } from '../utils/isObject';
 import { DTO } from '../DTO';
@@ -100,13 +100,4 @@ const validateRange: <K extends string>(
   return [];
 };
 
-const forcePositive = (range?: RangeProperty): RangeProperty | undefined => {
-  if (typeof range === 'number' || typeof range === 'bigint') return range;
-
-  return {
-    min: range?.min ?? 0,
-    max: range?.max
-  };
-};
-
-export { RangeProperty, RangeProperties, WithRange, DTOWithRange, validateRange, forcePositive };
+export { RangeProperty, RangeProperties, WithRange, DTOWithRange, validateRange };

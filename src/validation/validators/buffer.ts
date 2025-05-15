@@ -1,12 +1,14 @@
+import { error, ValidationError, Validator } from '../Validator';
 import { validateValidators } from '../../mixins/validators';
 import { BufferProperties } from '../../types/buffer';
 import { validateLength } from '../../mixins/length';
-import { error, Validator } from '../validator';
 
-const validateBuffer: Validator<any, BufferProperties> = (value, props) => {
-  if (!(value instanceof Uint8Array)) return [error('Value must be a buffer!')];
-  const errors = validateLength(value.byteLength, props);
-  return errors.length === 0 ? validateValidators(value, props) : errors;
-};
+class BufferValidator extends Validator<BufferProperties> {
+  validate(value: any): ValidationError[] {
+    if (!(value instanceof Uint8Array)) return [error('Value must be a buffer!')];
+    const errors = validateLength(value.byteLength, this.properties);
+    return errors.length === 0 ? validateValidators(value, this.properties) : errors;
+  }
+}
 
-export { validateBuffer };
+export { BufferValidator };

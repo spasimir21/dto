@@ -1,9 +1,13 @@
+import { error, ValidationError, Validator } from '../Validator';
 import { validateValidators } from '../../mixins/validators';
 import { ValueProperties } from '../../types/value';
 import { stringify } from '../../utils/stringify';
-import { error, Validator } from '../validator';
 
-const validateValue: Validator<any, ValueProperties<any>> = (value, props) =>
-  props.isValid(value) ? validateValidators(value, props) : [error(`Value must be ${stringify(props.getValue())}!`)];
+class ValueValidator<T> extends Validator<ValueProperties<T>> {
+  validate(value: any): ValidationError[] {
+    if (!this.properties.isValid(value)) return [error(`Value must be ${stringify(this.properties.getValue())}!`)];
+    return validateValidators(value, this.properties);
+  }
+}
 
-export { validateValue };
+export { ValueValidator };

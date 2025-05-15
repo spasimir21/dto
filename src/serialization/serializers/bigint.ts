@@ -1,27 +1,26 @@
+import { BigInt64Adapter, BigUint64Adapter } from '../binary/adapters/BigIntAdapter';
 import { BigIntProperties } from '../../types/bigint';
-import { Serializer } from '../serialization';
+import { BinaryWriter } from '../binary/BinaryWriter';
+import { BinaryReader } from '../binary/BinaryReader';
+import { Serializer } from '../Serializer';
 
-const BigIntSerializer: Serializer<bigint, BigIntProperties> = {
-  write: (value, props, binary) => {
-    if (typeof props.value === 'bigint') return;
-
-    if (props.value?.min != null && props.value.min >= BigInt(0)) binary.view.setBigUint64(binary.offset, value);
-    else binary.view.setBigInt64(binary.offset, value);
-
-    binary.offset += 8;
-  },
-  read: (props, binary) => {
-    if (typeof props.value === 'bigint') return props.value;
-
-    let value: bigint;
-    if (props.value?.min != null && props.value.min >= BigInt(0)) value = binary.view.getBigUint64(binary.offset);
-    else value = binary.view.getBigInt64(binary.offset);
-
-    binary.offset += 8;
-
-    return value;
-  },
-  size: (value, props) => (typeof props.value === 'bigint' ? 0 : 8)
+const getBigIntAdapter = (value: BigIntProperties['value']) => {
+  if (value == null || typeof value === 'bigint') return BigInt64Adapter;
+  return value.min == null || value.min < 0n ? BigInt64Adapter : BigUint64Adapter;
 };
+
+class BigIntSerializer extends Serializer<bigint, BigIntProperties> {
+  readonly adapter = getBigIntAdapter(this.properties.value);
+
+  write(value: bigint, writer: BinaryWriter): void {
+    if (typeof this.properties.value === 'bigint') return;
+    writer.write(value, this.adapter);
+  }
+
+  read(reader: BinaryReader): bigint {
+    if (typeof this.properties.value === 'bigint') return this.properties.value;
+    return reader.read(this.adapter);
+  }
+}
 
 export { BigIntSerializer };

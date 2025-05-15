@@ -1,19 +1,17 @@
+import { Uint8Adapter } from '../binary/adapters/NumberAdapter';
 import { BooleanProperties } from '../../types/boolean';
-import { Serializer } from '../serialization';
+import { BinaryReader } from '../binary/BinaryReader';
+import { BinaryWriter } from '../binary/BinaryWriter';
+import { Serializer } from '../Serializer';
 
-const BooleanSerializer: Serializer<boolean, BooleanProperties> = {
-  write: (value, props, binary) => {
-    binary.view.setUint8(binary.offset, value === true ? 255 : 0);
-    binary.offset++;
-  },
-  read: (props, binary) => {
-    const value = binary.view.getUint8(binary.offset);
-    binary.offset++;
-    return value === 255;
-  },
-  size: (value, props) => {
-    return 1;
+class BooleanSerializer extends Serializer<boolean, BooleanProperties> {
+  write(value: boolean, writer: BinaryWriter): void {
+    writer.write(value ? 255 : 0, Uint8Adapter);
   }
-};
+
+  read(reader: BinaryReader): boolean {
+    return reader.read(Uint8Adapter) === 255;
+  }
+}
 
 export { BooleanSerializer };

@@ -1,34 +1,28 @@
 import { LengthSerializer } from '../../mixins/length';
+import { BinaryWriter } from '../binary/BinaryWriter';
+import { BinaryReader } from '../binary/BinaryReader';
 import { ArrayProperties } from '../../types/array';
 import { getSerializer } from '../serializers';
-import { Serializer } from '../serialization';
-import { DTO } from '../../DTO';
+import { Serializer } from '../Serializer';
+import { DTO, DTOType } from '../../DTO';
 
-const ArraySerializer: Serializer<any[], ArrayProperties<DTO>> = {
-  write: (value, props, binary) => {
-    LengthSerializer.write(value.length, props, binary);
+class ArraySerializer<T extends DTO> extends Serializer<DTOType<T>[], ArrayProperties<T>> {
+  readonly lengthSerializer = new LengthSerializer(this.properties);
+  readonly itemSerializer = getSerializer(this.properties.of);
 
-    const itemSerializer = getSerializer(props.of);
-    for (const item of value) itemSerializer.write(item, props.of.properties, binary);
-  },
-  read: (props, binary) => {
-    const length = LengthSerializer.read(props, binary);
-
-    const itemSerializer = getSerializer(props.of);
-    const value = new Array(length);
-
-    for (let i = 0; i < length; i++) value[i] = itemSerializer.read(props.of.properties, binary);
-
-    return value;
-  },
-  size: (value, props) => {
-    const itemSerializer = getSerializer(props.of);
-
-    return (
-      LengthSerializer.size(value.length, props) +
-      value.reduce((size, item) => size + itemSerializer.size(item, props.of.properties), 0)
-    );
+  write(value: DTOType<T>[], writer: BinaryWriter): void {
+    this.lengthSerializer.write(value.length, writer);
+    for (const item of value) this.itemSerializer.write(item, writer);
   }
-};
+
+  read(reader: BinaryReader): DTOType<T>[] {
+    const length = this.lengthSerializer.read(reader);
+    const array = new Array<DTOType<T>>(length);
+
+    for (let i = 0; i < length; i++) array[i] = this.itemSerializer.read(reader);
+
+    return array;
+  }
+}
 
 export { ArraySerializer };

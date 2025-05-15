@@ -30,6 +30,7 @@ class StringDTO extends deriveDTO(WithValidators, WithLength, WithRange<'byteLen
     return {
       $$type: 'string',
       length: this.properties.length,
+      byteLength: this.properties.byteLength,
       pattern: this.properties.pattern ? String(this.properties.pattern) : undefined
     } as const;
   }

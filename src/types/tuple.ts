@@ -26,4 +26,4 @@ class TupleDTO<T extends DTO[]> extends deriveDTO(WithValidators)<TupleDTOType<T
 
 const tuple = <T extends DTO[]>(props: TupleProperties<T>) => new TupleDTO(props);
 
-export { TupleProperties, TupleDTO, tuple };
+export { TupleProperties, TupleDTO, TupleDTOType, tuple };

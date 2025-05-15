@@ -10,6 +10,10 @@ const nestError = (prop: string, error: ValidationError): ValidationError => ({
   message: error.message
 });
 
-type Validator<T, Props> = (value: T, properties: Props) => ValidationError[];
+abstract class Validator<Props = any> {
+  constructor(public readonly properties: Props) {}
+
+  abstract validate(value: any): ValidationError[];
+}
 
 export { ValidationError, error, nestError, Validator };

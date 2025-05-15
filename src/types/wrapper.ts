@@ -5,9 +5,9 @@ interface WrapperProperties<T extends DTO> {
   value: T | (() => T);
 }
 
-class DTOWrapper<T extends DTO> extends deriveDTO()<DTOType<T>, WrapperProperties<T>> {
+class WrapperDTO<T extends DTO> extends deriveDTO()<DTOType<T>, WrapperProperties<T>> {
   withValue<U extends DTO>(value: U | (() => U)) {
-    return (this as any as DTOWrapper<U>).with({ value });
+    return (this as any as WrapperDTO<U>).with({ value });
   }
 
   withName(name: string) {
@@ -32,6 +32,6 @@ class DTOWrapper<T extends DTO> extends deriveDTO()<DTOType<T>, WrapperPropertie
   }
 }
 
-const wrap = <T extends DTO>(props: WrapperProperties<T>) => new DTOWrapper(props);
+const wrap = <T extends DTO>(props: WrapperProperties<T>) => new WrapperDTO(props);
 
-export { WrapperProperties, DTOWrapper, wrap };
+export { WrapperProperties, WrapperDTO, wrap };

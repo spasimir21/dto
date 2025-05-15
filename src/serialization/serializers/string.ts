@@ -1,21 +1,26 @@
+import { BinaryWriter } from '../binary/BinaryWriter';
+import { BinaryReader } from '../binary/BinaryReader';
 import { StringProperties } from '../../types/string';
-import { Serializer } from '../serialization';
 import { BufferSerializer } from './buffer';
+import { Serializer } from '../Serializer';
 
-const encoder = new TextEncoder();
-const decoder = new TextDecoder();
+class StringSerializer extends Serializer<string, StringProperties> {
+  readonly bufferSerializer = new BufferSerializer({
+    length: 'byteLength' in this.properties ? this.properties.byteLength : this.properties.length
+  });
 
-const StringSerializer: Serializer<string, StringProperties> = {
-  write: (value, props, binary) =>
-    BufferSerializer.write(
-      encoder.encode(value),
-      { length: 'byteLength' in props ? props.byteLength : props.length },
-      binary
-    ),
-  read: (props, binary) =>
-    decoder.decode(BufferSerializer.read({ length: 'byteLength' in props ? props.byteLength : props.length }, binary)),
-  size: (value, props) =>
-    BufferSerializer.size(encoder.encode(value), { length: 'byteLength' in props ? props.byteLength : props.length })
-};
+  readonly encoder = new TextEncoder();
+  readonly decoder = new TextDecoder();
+
+  write(value: string, writer: BinaryWriter): void {
+    const buffer = this.encoder.encode(value);
+    this.bufferSerializer.write(buffer, writer);
+  }
+
+  read(reader: BinaryReader): string {
+    const buffer = this.bufferSerializer.read(reader);
+    return this.decoder.decode(buffer);
+  }
+}
 
 export { StringSerializer };

@@ -1,7 +1,5 @@
-import { forcePositive, RangeProperty, validateRange, WithRange } from './range';
 import { NumberSerializer } from '../serialization/serializers/number';
-import { Serializer } from '../serialization/serialization';
-import { Validator } from '../validation/validator';
+import { RangeProperty, validateRange, WithRange } from './range';
 import { Mixin } from '../utils/mixin';
 
 interface LengthProperties {
@@ -20,31 +18,21 @@ interface DTOWithLength {
 
 const WithLength = WithRange('length') as Mixin<DTOWithLength>;
 
-const validateLength: Validator<number, LengthProperties> = (length, props) => validateRange(length, 'length', props);
+const validateLength = (length: number, props: LengthProperties) => validateRange(length, 'length', props);
 
-const LengthSerializer: Serializer<number, LengthProperties> = {
-  write: (value, props, binary) =>
-    NumberSerializer.write(
-      value,
-      {
-        value: forcePositive(props.length),
-        int: true
-      },
-      binary
-    ),
-  read: (props, binary) =>
-    NumberSerializer.read(
-      {
-        value: forcePositive(props.length),
-        int: true
-      },
-      binary
-    ),
-  size: (value, props) =>
-    NumberSerializer.size(value, {
-      value: forcePositive(props.length),
+class LengthSerializer extends NumberSerializer {
+  constructor({ length }: LengthProperties) {
+    super({
+      value:
+        typeof length === 'number'
+          ? length
+          : {
+              min: length?.min ?? 0,
+              max: length?.max
+            },
       int: true
-    })
-};
+    });
+  }
+}
 
 export { LengthProperties, DTOWithLength, WithLength, validateLength, LengthSerializer };

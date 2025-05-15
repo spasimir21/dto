@@ -1,25 +1,24 @@
-import { validateDictionary } from './validators/dictionary';
-import { ValidationError, Validator } from './validator';
-import { validateNullable } from './validators/nullable';
-import { validateBoolean } from './validators/boolean';
-import { validateWrapper } from './validators/wrapper';
-import { validateBigInt } from './validators/bigint';
-import { validateBuffer } from './validators/buffer';
-import { validateNumber } from './validators/number';
-import { validateString } from './validators/string';
-import { validateObject } from './validators/object';
+import { DictionaryValidator } from './validators/dictionary';
+import { NullableValidator } from './validators/nullable';
+import { BooleanValidator } from './validators/boolean';
+import { WrapperValidator } from './validators/wrapper';
+import { BigIntValidator } from './validators/bigint';
+import { BufferValidator } from './validators/buffer';
+import { NumberValidator } from './validators/number';
+import { ObjectValidator } from './validators/object';
+import { StringValidator } from './validators/string';
+import { ArrayValidator } from './validators/array';
+import { ConstValidator } from './validators/const';
+import { OneOfValidator } from './validators/oneOf';
+import { TupleValidator } from './validators/tuple';
+import { ValueValidator } from './validators/value';
 import { DictionaryDTO } from '../types/dictionary';
-import { validateConst } from './validators/const';
-import { validateArray } from './validators/array';
-import { validateOneOf } from './validators/oneOf';
-import { validateValue } from './validators/value';
-import { validateTuple } from './validators/tuple';
-import { validateDate } from './validators/date';
-import { validateEnum } from './validators/enum';
+import { EnumValidator } from './validators/enum';
+import { DateValidator } from './validators/date';
+import { AnyValidator } from './validators/any';
 import { NullableDTO } from '../types/nullable';
-import { validateAny } from './validators/any';
+import { WrapperDTO } from '../types/wrapper';
 import { BooleanDTO } from '../types/boolean';
-import { DTOWrapper } from '../types/wrapper';
 import { BigIntDTO } from '../types/bigint';
 import { BufferDTO } from '../types/buffer';
 import { StringDTO } from '../types/string';
@@ -30,36 +29,44 @@ import { ValueDTO } from '../types/value';
 import { OneOfDTO } from '../types/oneOf';
 import { ArrayDTO } from '../types/array';
 import { ConstDTO } from '../types/const';
+import { Validator } from './Validator';
 import { DateDTO } from '../types/date';
 import { EnumDTO } from '../types/enum';
 import { AnyDTO } from '../types/any';
 import { DTO } from '../DTO';
 
-const validate = (value: any, schema: DTO): ValidationError[] => {
-  const validator = Validators.get(schema.constructor as any);
-  if (validator == null) return [];
+const $$VALIDATOR = Symbol('$$VALIDATOR');
 
-  return validator(value, schema.properties);
+const getValidator = <Props>(dto: DTO<any, Props>): Validator<Props> => {
+  if ($$VALIDATOR in dto) return (dto as any)[$$VALIDATOR];
+
+  const validatorClass = Validators.get(dto.constructor as any) ?? AnyValidator;
+  const validator = new validatorClass(dto.properties as any);
+  (dto as any)[$$VALIDATOR] = validator;
+
+  return validator;
 };
 
-const Validators = new Map<new (...args: any) => DTO, Validator<any, any>>();
+const validate = (value: any, dto: DTO) => getValidator(dto).validate(value);
 
-Validators.set(DictionaryDTO, validateDictionary);
-Validators.set(NullableDTO, validateNullable);
-Validators.set(BooleanDTO, validateBoolean);
-Validators.set(DTOWrapper, validateWrapper);
-Validators.set(BigIntDTO, validateBigInt);
-Validators.set(BufferDTO, validateBuffer);
-Validators.set(NumberDTO, validateNumber);
-Validators.set(StringDTO, validateString);
-Validators.set(ObjectDTO, validateObject);
-Validators.set(ConstDTO, validateConst);
-Validators.set(ArrayDTO, validateArray);
-Validators.set(OneOfDTO, validateOneOf);
-Validators.set(ValueDTO, validateValue);
-Validators.set(TupleDTO, validateTuple);
-Validators.set(DateDTO, validateDate);
-Validators.set(EnumDTO, validateEnum);
-Validators.set(AnyDTO, validateAny);
+const Validators = new Map<new (...args: any) => DTO, new (properties: any) => Validator<any>>();
 
-export { Validators, validate };
+Validators.set(DictionaryDTO, DictionaryValidator);
+Validators.set(NullableDTO, NullableValidator);
+Validators.set(BooleanDTO, BooleanValidator);
+Validators.set(WrapperDTO, WrapperValidator);
+Validators.set(BigIntDTO, BigIntValidator);
+Validators.set(BufferDTO, BufferValidator);
+Validators.set(NumberDTO, NumberValidator);
+Validators.set(ObjectDTO, ObjectValidator);
+Validators.set(StringDTO, StringValidator);
+Validators.set(ConstDTO, ConstValidator);
+Validators.set(ArrayDTO, ArrayValidator);
+Validators.set(OneOfDTO, OneOfValidator);
+Validators.set(TupleDTO, TupleValidator);
+Validators.set(ValueDTO, ValueValidator);
+Validators.set(DateDTO, DateValidator);
+Validators.set(EnumDTO, EnumValidator);
+Validators.set(AnyDTO, AnyValidator);
+
+export { Validators, getValidator, validate };

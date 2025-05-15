@@ -1,29 +1,22 @@
-import { TupleProperties } from '../../types/tuple';
+import { TupleDTOType, TupleProperties } from '../../types/tuple';
+import { BinaryWriter } from '../binary/BinaryWriter';
+import { BinaryReader } from '../binary/BinaryReader';
 import { getSerializer } from '../serializers';
-import { Serializer } from '../serialization';
+import { Serializer } from '../Serializer';
 import { DTO } from '../../DTO';
 
-const TupleSerializer: Serializer<any[], TupleProperties<DTO[]>> = {
-  write: (value, props, binary) => {
-    for (let i = 0; i < value.length; i++)
-      getSerializer(props.values[i]).write(value[i], props.values[i].properties, binary);
-  },
-  read: (props, binary) => {
-    const value = new Array(props.values.length);
+class TupleSerializer<T extends DTO[]> extends Serializer<TupleDTOType<T>, TupleProperties<T>> {
+  readonly valueSerializers = this.properties.values.map(getSerializer);
 
-    for (let i = 0; i < props.values.length; i++)
-      value[i] = getSerializer(props.values[i]).read(props.values[i].properties, binary);
-
-    return value;
-  },
-  size: (value, props) => {
-    let size = 0;
-
-    for (let i = 0; i < value.length; i++)
-      size += getSerializer(props.values[i]).size(value[i], props.values[i].properties);
-
-    return size;
+  write(value: TupleDTOType<T>, writer: BinaryWriter): void {
+    for (let i = 0; i < this.valueSerializers.length; i++) this.valueSerializers[i].write(value[i], writer);
   }
-};
+
+  read(reader: BinaryReader): TupleDTOType<T> {
+    const tuple = new Array<any>(this.valueSerializers.length);
+    for (let i = 0; i < this.valueSerializers.length; i++) tuple[i] = this.valueSerializers[i].read(reader);
+    return tuple as any;
+  }
+}
 
 export { TupleSerializer };

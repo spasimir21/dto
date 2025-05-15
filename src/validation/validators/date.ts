@@ -1,24 +1,26 @@
+import { error, ValidationError, Validator } from '../Validator';
 import { validateValidators } from '../../mixins/validators';
 import { validateRange } from '../../mixins/range';
 import { DateProperties } from '../../types/date';
-import { error, Validator } from '../validator';
 
-const validateDate: Validator<any, DateProperties> = (value, props) => {
-  if (!(value instanceof Date)) return [error('Value must be a date!')];
+class DateValidator extends Validator<DateProperties> {
+  validate(value: any): ValidationError[] {
+    if (!(value instanceof Date)) return [error('Value must be a date!')];
 
-  const errors = [
-    ...validateRange(value.getTime(), 'time', props),
-    ...validateRange(value.getUTCFullYear(), 'year', props),
-    ...validateRange(value.getUTCMonth(), 'month', props),
-    ...validateRange(value.getUTCDate(), 'date', props),
-    ...validateRange(value.getUTCDay(), 'day', props),
-    ...validateRange(value.getUTCHours(), 'hour', props),
-    ...validateRange(value.getUTCMinutes(), 'minute', props),
-    ...validateRange(value.getUTCSeconds(), 'second', props),
-    ...validateRange(value.getUTCMilliseconds(), 'millis', props)
-  ];
+    const errors = [
+      ...validateRange(value.getTime(), 'time', this.properties),
+      ...validateRange(value.getUTCFullYear(), 'year', this.properties),
+      ...validateRange(value.getUTCMonth(), 'month', this.properties),
+      ...validateRange(value.getUTCDate(), 'date', this.properties),
+      ...validateRange(value.getUTCDay(), 'day', this.properties),
+      ...validateRange(value.getUTCHours(), 'hour', this.properties),
+      ...validateRange(value.getUTCMinutes(), 'minute', this.properties),
+      ...validateRange(value.getUTCSeconds(), 'second', this.properties),
+      ...validateRange(value.getUTCMilliseconds(), 'millis', this.properties)
+    ];
 
-  return errors.length === 0 ? validateValidators(value, props) : errors;
-};
+    return errors.length === 0 ? validateValidators(value, this.properties) : errors;
+  }
+}
 
-export { validateDate };
+export { DateValidator };

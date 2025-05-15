@@ -24,7 +24,7 @@ interface DictionaryProperties<T extends DTO>
   extends ValidatorProperties<Record<string, DTOType<T>>, DictionaryProperties<T>>,
     PropertyCountProperties {
   key?: DTO<string>;
-  value: T;
+  of: T;
 }
 
 const Key = string();
@@ -33,8 +33,8 @@ class DictionaryDTO<T extends DTO> extends deriveDTO(WithValidators, WithPropert
   Record<string, DTOType<T>>,
   DictionaryProperties<T>
 > {
-  withValue<U extends DTO>(value: U) {
-    return (this as any as DictionaryDTO<U>).with({ value });
+  withOf<U extends DTO>(of: U) {
+    return (this as any as DictionaryDTO<U>).with({ of });
   }
 
   withKey(key: DTO<string>) {
@@ -44,7 +44,7 @@ class DictionaryDTO<T extends DTO> extends deriveDTO(WithValidators, WithPropert
   stringify(): string {
     return `Dictionary<${
       this.properties.key ? this.properties.key.stringify() : 'string'
-    }, ${this.properties.value.stringify()}>`;
+    }, ${this.properties.of.stringify()}>`;
   }
 
   export() {
@@ -52,7 +52,7 @@ class DictionaryDTO<T extends DTO> extends deriveDTO(WithValidators, WithPropert
       $$type: 'dictionary',
       propertyCount: this.properties.propertyCount,
       key: _export(this.properties.key ?? Key),
-      value: _export(this.properties.value)
+      of: _export(this.properties.of)
     } as const;
   }
 }

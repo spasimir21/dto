@@ -1,52 +1,49 @@
 import { fromBitMask, getBitMaskLength, toBitMask } from '../../utils/bitmask';
-import { ObjectProperties } from '../../types/object';
+import { ObjectDTOType, ObjectProperties } from '../../types/object';
+import { BufferAdapter } from '../binary/adapters/BufferAdapter';
+import { BinaryWriter } from '../binary/BinaryWriter';
+import { BinaryReader } from '../binary/BinaryReader';
+import { mapObject } from '../../utils/mapObject';
 import { getSerializer } from '../serializers';
-import { Serializer } from '../serialization';
+import { Serializer } from '../Serializer';
 import { DTO } from '../../DTO';
 
-const ObjectSerializer: Serializer<any, ObjectProperties<Record<string, DTO>, string>> = {
-  write: (value, props, binary) => {
-    const optionalMask = toBitMask((props.optional ?? []).map(prop => prop in value && value[prop] !== undefined));
-    for (const byte of optionalMask) {
-      binary.view.setUint8(binary.offset, byte);
-      binary.offset++;
+class ObjectSerializer<T extends Record<string, DTO>, O extends keyof T> extends Serializer<
+  ObjectDTOType<T, O>,
+  ObjectProperties<T, O>
+> {
+  readonly keys = Object.keys(this.properties.values).sort((a, b) => a.localeCompare(b));
+  readonly valueSerializers = mapObject(this.properties.values, (_, value) => getSerializer(value));
+
+  readonly optionalIndexMap = new Map((this.properties.optional ?? []).map((key, i) => [key, i] as const));
+  readonly optionalMaskLength = getBitMaskLength(this.properties.optional?.length ?? 0);
+
+  write(value: ObjectDTOType<T, O>, writer: BinaryWriter): void {
+    // prettier-ignore
+    const optionalMask = toBitMask((this.properties.optional ?? []).map(prop => prop in value && value[prop] !== undefined));
+    writer.write(optionalMask, BufferAdapter);
+
+    for (const key of this.keys) {
+      if ((!(key in value) || (value as any)[key] === undefined) && this.optionalIndexMap.has(key as any)) continue;
+      this.valueSerializers[key].write((value as any)[key], writer);
     }
-
-    for (const key in props.values) {
-      if (!(key in value) || value[key] === undefined) continue;
-      getSerializer(props.values[key]).write(value[key], props.values[key].properties, binary);
-    }
-  },
-  read: (props, binary) => {
-    const optionalMask = new Array<number>(getBitMaskLength(props.optional?.length ?? 0));
-
-    for (let i = 0; i < optionalMask.length; i++) {
-      optionalMask[i] = binary.view.getUint8(binary.offset);
-      binary.offset++;
-    }
-
-    const optional = fromBitMask(optionalMask, props.optional?.length ?? 0);
-    const value: any = {};
-
-    for (const key in props.values) {
-      const optionalIndex = props.optional ? props.optional.indexOf(key) : -1;
-      if (optionalIndex >= 0 && optional[optionalIndex] === false) continue;
-
-      value[key] = getSerializer(props.values[key]).read(props.values[key].properties, binary);
-    }
-
-    return value;
-  },
-  size: (value, props) => {
-    let size = getBitMaskLength(props.optional?.length ?? 0);
-
-    for (const key in props.values) {
-      if (!(key in value) || value[key] === undefined) continue;
-      size += getSerializer(props.values[key]).size(value[key], props.values[key].properties);
-    }
-
-    return size;
   }
-};
+
+  read(reader: BinaryReader): ObjectDTOType<T, O> {
+    const object: any = {};
+
+    const optionalMask = reader.read(BufferAdapter, this.optionalMaskLength);
+    const optional = fromBitMask(optionalMask, this.optionalIndexMap.size);
+
+    for (const key of this.keys) {
+      const optionalIndex = this.optionalIndexMap.get(key as any);
+      if (optionalIndex != null && optional[optionalIndex] === false) continue;
+
+      object[key] = this.valueSerializers[key].read(reader);
+    }
+
+    return object;
+  }
+}
 
 export { ObjectSerializer };

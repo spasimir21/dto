@@ -1,11 +1,22 @@
+import { ValidationError, Validator } from '../Validator';
 import { WrapperProperties } from '../../types/wrapper';
-import { Validator } from '../validator';
 import { validate } from '../validators';
 import { DTO } from '../../DTO';
 
-const validateWrapper: Validator<any, WrapperProperties<DTO>> = (value, props) => {
-  const dto = typeof props.value === 'function' ? props.value() : props.value;
-  return validate(value, dto);
-};
+class WrapperValidator<T extends DTO> extends Validator<WrapperProperties<T>> {
+  private _valueDto: DTO<T> | null = null;
 
-export { validateWrapper };
+  get valueDto() {
+    if (this._valueDto != null) return this._valueDto;
+
+    this._valueDto = typeof this.properties.value === 'function' ? this.properties.value() : this.properties.value;
+
+    return this._valueDto;
+  }
+
+  validate(value: any): ValidationError[] {
+    return validate(value, this.valueDto);
+  }
+}
+
+export { WrapperValidator };

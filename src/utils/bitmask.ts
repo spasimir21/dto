@@ -1,7 +1,7 @@
 const getBitMaskLength = (flagCount: number) => Math.ceil(flagCount / 8);
 
 const toBitMask = (flags: boolean[]) => {
-  const bitMask = new Array<number>(getBitMaskLength(flags.length)).fill(0);
+  const bitMask = new Uint8Array(getBitMaskLength(flags.length));
 
   for (let i = 0; i < flags.length; i++) {
     if (!flags[i]) continue;
@@ -15,7 +15,7 @@ const toBitMask = (flags: boolean[]) => {
   return bitMask;
 };
 
-const fromBitMask = (mask: number[], flagCount: number) => {
+const fromBitMask = (mask: Uint8Array, flagCount: number) => {
   const flags = new Array<boolean>(flagCount).fill(false);
 
   for (let i = 0; i < flagCount; i++) {

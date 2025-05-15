@@ -18,13 +18,13 @@ import { DictionaryDTO } from '../types/dictionary';
 import { AnySerializer } from './serializers/any';
 import { NullableDTO } from '../types/nullable';
 import { BooleanDTO } from '../types/boolean';
-import { DTOWrapper } from '../types/wrapper';
-import { Serializer } from './serialization';
+import { WrapperDTO } from '../types/wrapper';
 import { BigIntDTO } from '../types/bigint';
 import { BufferDTO } from '../types/buffer';
 import { StringDTO } from '../types/string';
 import { NumberDTO } from '../types/number';
 import { ObjectDTO } from '../types/object';
+import { Serializer } from './Serializer';
 import { TupleDTO } from '../types/tuple';
 import { ValueDTO } from '../types/value';
 import { OneOfDTO } from '../types/oneOf';
@@ -35,14 +35,24 @@ import { EnumDTO } from '../types/enum';
 import { AnyDTO } from '../types/any';
 import { DTO } from '../DTO';
 
-const getSerializer = (dto: DTO): Serializer<any, any> => Serializers.get(dto.constructor) ?? AnySerializer;
+const $$SERIALIZER = Symbol('$$SERIALIZER');
 
-const Serializers = new Map<any, Serializer>();
+const getSerializer = <T, Props>(dto: DTO<T, Props>): Serializer<T, Props> => {
+  if ($$SERIALIZER in dto) return (dto as any)[$$SERIALIZER];
+
+  const serializerClass = Serializers.get(dto.constructor as any) ?? AnySerializer;
+  const serializer = new serializerClass(dto.properties as any);
+  (dto as any)[$$SERIALIZER] = serializer;
+
+  return serializer;
+};
+
+const Serializers = new Map<any, new (properties: any) => Serializer>();
 
 Serializers.set(DictionaryDTO, DictionarySerializer);
 Serializers.set(NullableDTO, NullableSerializer);
 Serializers.set(BooleanDTO, BooleanSerializer);
-Serializers.set(DTOWrapper, WrapperSerializer);
+Serializers.set(WrapperDTO, WrapperSerializer);
 Serializers.set(BigIntDTO, BigIntSerializer);
 Serializers.set(BufferDTO, BufferSerializer);
 Serializers.set(NumberDTO, NumberSerializer);

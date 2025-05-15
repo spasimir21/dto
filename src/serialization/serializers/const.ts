@@ -1,10 +1,14 @@
+import { BinaryReader } from '../binary/BinaryReader';
+import { BinaryWriter } from '../binary/BinaryWriter';
 import { ConstProperties } from '../../types/const';
-import { Serializer } from '../serialization';
+import { Serializer } from '../Serializer';
 
-const ConstSerializer: Serializer<any, ConstProperties<any>> = {
-  write: () => {},
-  read: props => props.value,
-  size: () => 0
-};
+class ConstSerializer<T> extends Serializer<T, ConstProperties<T>> {
+  write(value: T, writer: BinaryWriter): void {}
+
+  read(reader: BinaryReader): T {
+    return this.properties.value;
+  }
+}
 
 export { ConstSerializer };

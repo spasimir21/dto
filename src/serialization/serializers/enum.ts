@@ -1,32 +1,26 @@
+import { BinaryReader } from '../binary/BinaryReader';
+import { BinaryWriter } from '../binary/BinaryWriter';
 import { EnumProperties } from '../../types/enum';
-import { Serializer } from '../serialization';
 import { NumberSerializer } from './number';
+import { Serializer } from '../Serializer';
 
-const EnumSerializer: Serializer<any, EnumProperties<any>> = {
-  write: (value, props, binary) =>
-    NumberSerializer.write(
-      props.values.indexOf(value),
-      {
-        value: { min: 0, max: props.values.length - 1 },
-        int: true
-      },
-      binary
-    ),
-  read: (props, binary) =>
-    props.values[
-      NumberSerializer.read(
-        {
-          value: { min: 0, max: props.values.length - 1 },
-          int: true
-        },
-        binary
-      )
-    ],
-  size: (value, props) =>
-    NumberSerializer.size(props.values.indexOf(value), {
-      value: { min: 0, max: props.values.length - 1 },
-      int: true
-    })
-};
+class EnumSerializer<T> extends Serializer<T, EnumProperties<T>> {
+  readonly indexSerializer = new NumberSerializer({
+    value: { min: 0, max: this.properties.values.length - 1 },
+    int: true
+  });
+
+  readonly indexMap = new Map(this.properties.values.map((v, i) => [v, i] as const));
+
+  write(value: T, writer: BinaryWriter): void {
+    const index = this.indexMap.get(value)!;
+    this.indexSerializer.write(index, writer);
+  }
+
+  read(reader: BinaryReader): T {
+    const index = this.indexSerializer.read(reader);
+    return this.properties.values[index];
+  }
+}
 
 export { EnumSerializer };
